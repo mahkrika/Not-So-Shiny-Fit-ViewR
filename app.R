@@ -3,6 +3,9 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 library(DT)
+library(FITfileR)
+library(ggplot2)
+library(hms)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -10,7 +13,7 @@ ui <- fluidPage(
     # Application title
     titlePanel("The Not-So-Shiny .Fit ViewR"),
 
-    # Sidebar with a slider input for number of bins 
+    # Sidebar with input for .fit file
     sidebarLayout(
         sidebarPanel(
             
@@ -18,7 +21,6 @@ ui <- fluidPage(
             
         ),
 
-        # Show a plot of the generated distribution
         mainPanel(
             conditionalPanel(
                 "output.fileUploaded == true",
@@ -27,7 +29,7 @@ ui <- fluidPage(
                 h4("Total distance:"),
                 h4(textOutput("summaryDistance")),
                 h4("Total Duration (seconds):"),
-                h4(textOutput("summaryDuration")),
+                h4(textOutput("summaryDuration")), # Trying to use hms to shows as hhmmss!
                 h4("Average Speed:"),
                 h4(textOutput("summaryAvgSpeed")),
                 h4("Maximum Altitude:"),
@@ -59,9 +61,12 @@ ui <- fluidPage(
     )
 )
 
-# Define server logic required to draw a histogram
+# Define server functionality
 server <- function(input, output) {
     
+    # Take the input file from the box and validate + load using the brilliant package FITfileR.
+    #   Could not for the life of me work out how to load a .fit file. This package resolves the issue:
+    #   Read in the .fit file and then load the records. Bind them as it outputs as multiple datasets.
     rawData <- eventReactive(input$file1, {
         inFile <- input$file1
         
@@ -74,11 +79,15 @@ server <- function(input, output) {
         bind_rows(records(readFitFile(inFile$datapath, dropUnknown = TRUE, mergeMessages = TRUE)))
     })
     
+    # Section to determine if a file has been loaded - for conditional display on main body.
+    #   Not putting with other output code as dependent upon file input.
     output$fileUploaded <- reactive({
         return(!is.null(rawData()))
     })
     outputOptions(output, 'fileUploaded', suspendWhenHidden = FALSE)
     
+    
+    # Function for consistent line graphs - can then duplicate all graphs from different inputs:
     renderLineGraph <- function(dataInput, xn, yn) {
         renderPlot({
             df <- dataInput()
@@ -94,13 +103,16 @@ server <- function(input, output) {
     }
     
     
-
+# Mapping - again this is an output, however it was one of the most tricky parts, and one that I will return to.
+    # Hence, it should be up the top:
     
 # Fantastic basic tutorial on using Leaflet:
 #   https://medium.com/@joyplumeri/how-to-make-interactive-maps-in-r-shiny-brief-tutorial-c2e1ef0447da
     
 # Really struggled to use the palette (pal) in color (addCircleMarkers). Much searching led to this answer:
-#   https://github.com/rstudio/shiny/issues/858  
+#   https://github.com/rstudio/shiny/issues/858  (note the ~ is essential)
+    
+    # Custom palette to mark out the route to the number of position recordings. Starts at red marker and ends at black.
     
     pal <- reactive({
         colorNumeric(c("red", "blue","black"), 
@@ -109,6 +121,8 @@ server <- function(input, output) {
         )
     })
     
+    # Outputs as a map using Leaflet. Sets the centre of the map from variables.
+        # Markers set from the full coordinates dataframe as declared later.
     output$mymap <- renderLeaflet({
         leaflet(mapdf()) %>% 
             setView(lng = medLon(),
@@ -201,6 +215,17 @@ server <- function(input, output) {
             )
         paste0(summaryDuration)
     })
+    
+    summaryDurationHMS <- reactive({
+        summaryDurationHMS <- rawData() %>% 
+            summarise(
+                sDuration = as.numeric(difftime(max(timestamp, na.rm = TRUE),
+                                                min(timestamp, na.rm = TRUE),
+                                                units = "secs")
+                )
+            )
+        paste0(as.character(as_hms(summaryDurationHMS)))
+    })
 
     summaryAvgSpeed <- reactive({
         summaryAvgSpeed <- round((as.numeric(summaryDistance()) / as.numeric(summaryDuration())) * 3600, digits = 2)
@@ -231,22 +256,26 @@ server <- function(input, output) {
     
     
     output$summaryDistance <- renderText({
-        summaryDistance()
+        c(summaryDistance(), "km")
     })
     output$summaryDuration <- renderText({
         summaryDuration()
     })
     output$summaryAvgSpeed <- renderText({
-        summaryAvgSpeed()
+        c(summaryAvgSpeed(), "km/h")
     })
     output$summaryMaxAlt <- renderText({
-        summaryMaxAlt()
+        c(summaryMaxAlt(), "m")
     })
     output$summaryMinAlt <- renderText({
-        summaryMinAlt()
+        c(summaryMinAlt(), "m")
     })
     output$summaryAltChange <- renderText({
-        summaryAltChange()
+        c(summaryAltChange(), "m")
+    })
+    
+    output$summaryDurationHMS <- renderText({
+        summaryDurationHMS()
     })
     
     
