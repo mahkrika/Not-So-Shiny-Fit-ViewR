@@ -6,9 +6,11 @@ library(DT)
 library(FITfileR)
 library(ggplot2)
 library(hms)
+library(shinythemes)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+    theme = shinytheme("lumen"),
 
     # Application title
     titlePanel("The Not-So-Shiny .Fit ViewR"),
