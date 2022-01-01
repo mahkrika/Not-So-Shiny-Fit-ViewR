@@ -8,7 +8,7 @@ library(DT)
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Really shit Fit View-R"),
+    titlePanel("The Not-So-Shiny .Fit ViewR"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
@@ -25,7 +25,7 @@ ui <- fluidPage(
                 h2("File uploaded"),
                 h3("Summary of .fit:"),
                 h4("Total distance:"),
-                h4(textOutput("summaryDistance"), "km"),
+                h4(textOutput("summaryDistance")),
                 h4("Total Duration (seconds):"),
                 h4(textOutput("summaryDuration")),
                 h4("Average Speed:"),
@@ -94,14 +94,20 @@ server <- function(input, output) {
     }
     
     
+
+    
+# Fantastic basic tutorial on using Leaflet:
+#   https://medium.com/@joyplumeri/how-to-make-interactive-maps-in-r-shiny-brief-tutorial-c2e1ef0447da
+    
+# Really struggled to use the palette (pal) in color (addCircleMarkers). Much searching led to this answer:
+#   https://github.com/rstudio/shiny/issues/858  
+    
     pal <- reactive({
         colorNumeric(c("red", "blue","black"), 
-                        domain = 0:max(mapdf()$position_id),
-                        alpha = FALSE
-                        )
+                     domain = 0:max(mapdf()$position_id),
+                     alpha = FALSE
+        )
     })
-#   https://github.com/rstudio/shiny/issues/858  
-#   https://medium.com/@joyplumeri/how-to-make-interactive-maps-in-r-shiny-brief-tutorial-c2e1ef0447da
     
     output$mymap <- renderLeaflet({
         leaflet(mapdf()) %>% 
@@ -180,7 +186,7 @@ server <- function(input, output) {
     summaryDistance <- reactive({
         summaryDistance <- rawData() %>% 
             summarise(
-                maxDistance = max(distance, na.rm = TRUE)
+                maxDistance = max(distance, na.rm = TRUE) / 1000 # for km
             )
         paste0(summaryDistance)
     })
@@ -197,7 +203,7 @@ server <- function(input, output) {
     })
 
     summaryAvgSpeed <- reactive({
-        summaryAvgSpeed <- (as.numeric(summaryDistance()) / as.numeric(summaryDuration())) * 3600
+        summaryAvgSpeed <- round((as.numeric(summaryDistance()) / as.numeric(summaryDuration())) * 3600, digits = 2)
         paste0(summaryAvgSpeed)
     })
     
