@@ -79,7 +79,8 @@ ui <- fluidPage(
 
 # Define server functionality
 server <- function(input, output) {
-    
+
+    #####################################################################################################      
     # Take the input file from the box and validate + load using the brilliant package FITfileR.
     #   Could not for the life of me work out how to load a .fit file. This package resolves the issue:
     #   Read in the .fit file and then load the records. Bind them as it outputs as multiple datasets.
@@ -94,7 +95,8 @@ server <- function(input, output) {
         
         bind_rows(records(readFitFile(inFile$datapath, dropUnknown = TRUE, mergeMessages = TRUE)))
     })
-    
+
+    #####################################################################################################      
     # Section to determine if a file has been loaded - for conditional display on main body.
     #   Not putting with other output code as dependent upon file input.
     output$fileUploaded <- reactive({
@@ -102,6 +104,7 @@ server <- function(input, output) {
     })
     outputOptions(output, 'fileUploaded', suspendWhenHidden = FALSE)
     
+    # Lots more reactive conditionals for conditional panel in UI. Came to light as:
     # Pete doesn't record temperature - needs a catch to determine if data available...
         # Means nested conditional panels in the UI, but it does work, albeit with warnings for the missing data.
     output$tempValid <- reactive({
@@ -124,7 +127,7 @@ server <- function(input, output) {
     })
     outputOptions(output, 'speedValid', suspendWhenHidden = FALSE)
     
-    
+    #####################################################################################################     
     # Function for consistent line graphs - can then duplicate all graphs from different inputs:
     renderLineGraph <- function(dataInput, xn, yn) {
         renderPlot({
@@ -140,7 +143,7 @@ server <- function(input, output) {
         })
     }
     
-    
+    #####################################################################################################     
 # Mapping - again this is an output, however it was one of the most tricky parts, and one that I will return to.
     # Hence, it should be up the top:
     
@@ -292,7 +295,9 @@ server <- function(input, output) {
     })    
     
     
-    
+    #####################################################################################################      
+# Outputs for summary details at the top of the page - all text.
+        # use concatenate to pop in the km etc as it keeps it in the render for ease.
     output$summaryDistance <- renderText({
         c(summaryDistance(), "km")
     })
@@ -316,21 +321,23 @@ server <- function(input, output) {
         summaryDurationHMS()
     })
     
-    
+    #####################################################################################################      
+# Output of graphs - make use of the function for graphing, for simplicity and consistency:
+
+    output$graphAlt <- renderLineGraph(allAltitude, 'timestamp', 'altitude')
+    output$graphTemp <- renderLineGraph(allTemps, 'timestamp', 'temperature')
+    output$graphCad <- renderLineGraph(allCadence, 'timestamp', 'cadence')
+    output$graphSpeed <- renderLineGraph(allSpeeds, 'timestamp', 'speed')
+ 
+    #####################################################################################################   
+# Still mulling over the best route for displaying the entire dataset - is it even necessary?!   
     output$contents1 <- renderTable({
         rawData()
     })
     
     output$contents2 <- DT::renderDataTable({
         DT::datatable(rawData())
-    })
-
-    
-    output$graphAlt <- renderLineGraph(allAltitude, 'timestamp', 'altitude')
-    output$graphTemp <- renderLineGraph(allTemps, 'timestamp', 'temperature')
-    output$graphCad <- renderLineGraph(allCadence, 'timestamp', 'cadence')
-    output$graphSpeed <- renderLineGraph(allSpeeds, 'timestamp', 'speed')
-    
+    })   
     pushDetails <- reactive({
         box(
             width = 12,
@@ -349,6 +356,6 @@ server <- function(input, output) {
     })
     
 }
-
+#####################################################################################################  
 # Run the application 
 shinyApp(ui = ui, server = server)
