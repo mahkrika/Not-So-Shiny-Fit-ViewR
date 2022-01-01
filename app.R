@@ -40,14 +40,30 @@ ui <- fluidPage(
                 h4(textOutput("summaryAltChange")),
                 
                 h3("Graphs of .fit"),
+                
+                conditionalPanel(
+                    "output.altValid == true",
                 h4("Altitude by timestamp"),
-                plotOutput("graphAlt"),
+                plotOutput("graphAlt")
+                ),
+                
+                conditionalPanel(
+                    "output.tempValid == true",
                 h4("Temperature by timestamp"),
-                plotOutput("graphTemp"),
+                plotOutput("graphTemp")
+                ),
+                
+                conditionalPanel(
+                    "output.cadValid == true",
                 h4("Cadence by timestamp"),
-                plotOutput("graphCad"),
+                plotOutput("graphCad")
+                ),
+                
+                conditionalPanel(
+                    "output.speedValid == true",
                 h4("Speed by timestamp"),
-                plotOutput("graphSpeed"),
+                plotOutput("graphSpeed")
+                ),
 
                 h3("Map of route"),
                 leafletOutput(outputId = "mymap"),
@@ -85,6 +101,28 @@ server <- function(input, output) {
         return(!is.null(rawData()))
     })
     outputOptions(output, 'fileUploaded', suspendWhenHidden = FALSE)
+    
+    # Pete doesn't record temperature - needs a catch to determine if data available...
+        # Means nested conditional panels in the UI, but it does work, albeit with warnings for the missing data.
+    output$tempValid <- reactive({
+        return(!is.null(rawData()$temperature))
+    })
+    outputOptions(output, 'tempValid', suspendWhenHidden = FALSE)
+    
+    output$altValid <- reactive({
+        return(!is.null(rawData()$altitude))
+    })
+    outputOptions(output, 'altValid', suspendWhenHidden = FALSE)
+    
+    output$cadValid <- reactive({
+        return(!is.null(rawData()$cadence))
+    })
+    outputOptions(output, 'cadValid', suspendWhenHidden = FALSE)
+    
+    output$speedValid <- reactive({
+        return(!is.null(rawData()$speed))
+    })
+    outputOptions(output, 'speedValid', suspendWhenHidden = FALSE)
     
     
     # Function for consistent line graphs - can then duplicate all graphs from different inputs:
