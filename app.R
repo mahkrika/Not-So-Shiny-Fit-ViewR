@@ -2,15 +2,15 @@
 library(shiny)
 library(leaflet)
 library(dplyr)
-library(DT)
 library(FITfileR)
 library(ggplot2)
 library(hms)
 library(shinythemes)
+library(shinyBS)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-    theme = shinytheme("lumen"),
+    theme = shinytheme("yeti"),
 
     # Application title
     titlePanel("The Not-So-Shiny .Fit ViewR"),
@@ -71,9 +71,15 @@ ui <- fluidPage(
                 leafletOutput(outputId = "mymap"),
                 
                 h3("Individual row details of .fit"),
-                fluidRow(
-                    uiOutput("details")
-                ),
+                
+                # Lovely little package for collapsible panel
+                bsCollapse(
+                    bsCollapsePanel("Click here to expand full .fit table", "This is the full output of the fit ",
+                                    "file and combines all data into one structure:",
+                                    tableOutput("fullFitData"),
+                                    style = "primary"
+                    )
+                )
             ),
         )
     )
@@ -97,7 +103,12 @@ server <- function(input, output) {
         
         bind_rows(records(readFitFile(inFile$datapath, dropUnknown = TRUE, mergeMessages = TRUE)))
     })
-
+    
+   # rawDataDTTM <- reactive({
+   #     rawDataDTTM <- rawData() %>% 
+   #         mutate(timestampDTTM = format(timestamp, '%d-%m-%Y %H:%M:%S'))
+   # })
+    
     #####################################################################################################      
     # Section to determine if a file has been loaded - for conditional display on main body.
     #   Not putting with other output code as dependent upon file input.
@@ -326,36 +337,23 @@ server <- function(input, output) {
     #####################################################################################################      
 # Output of graphs - make use of the function for graphing, for simplicity and consistency:
 
-    output$graphAlt <- renderLineGraph(allAltitude, 'timestamp', 'altitude')
-    output$graphTemp <- renderLineGraph(allTemps, 'timestamp', 'temperature')
-    output$graphCad <- renderLineGraph(allCadence, 'timestamp', 'cadence')
-    output$graphSpeed <- renderLineGraph(allSpeeds, 'timestamp', 'speed')
+    output$graphAlt     <- renderLineGraph(allAltitude, 'timestamp', 'altitude')
+    output$graphTemp    <- renderLineGraph(allTemps, 'timestamp', 'temperature')
+    output$graphCad     <- renderLineGraph(allCadence, 'timestamp', 'cadence')
+    output$graphSpeed   <- renderLineGraph(allSpeeds, 'timestamp', 'speed')
  
     #####################################################################################################   
 # Still mulling over the best route for displaying the entire dataset - is it even necessary?!   
-    output$contents1 <- renderTable({
-        rawData()
-    })
+
     
-    output$contents2 <- DT::renderDataTable({
-        DT::datatable(rawData())
-    })   
-    pushDetails <- reactive({
-        box(
-            width = 12,
-            title = span("Full export of fit details",
-                         style = "color: white"),
-            status = "primary",
-            solidHeader = TRUE, 
-            collapsible = TRUE, 
-            collapsed = TRUE,
-            #tableOutput("contents1")
-            DT::dataTableOutput("contents2")
-        )
-    })
-    output$details <- renderUI({
-        pushDetails()
-    })
+    output$fullFitData <- renderTable({
+        rawData() %>% 
+            mutate(timestampDTTM = format(timestamp, '%d-%m-%Y %H:%M:%S')) %>% 
+            select(-timestamp) %>% 
+            select(timestampDTTM, everything()) %>% 
+            arrange(timestampDTTM)
+    },
+    striped = TRUE)
     
 }
 #####################################################################################################  
