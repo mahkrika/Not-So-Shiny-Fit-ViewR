@@ -49,8 +49,22 @@ ui <- fluidPage(
               subsequent operations. If you ever see this message, ", em("thank you for developing 
               this package!")),
             
-            p("All of the code that underpins this Shiny app is available from Github below.")
+            p("All of the code that underpins this Shiny app is available from Github below, as is a test
+              .fit file, should you wish to try it out.")
+            ,
             
+            actionButton("twitter_share",
+                         label = "",
+                         icon = icon("twitter"),
+                         style="color: #fff; background-color: #00acee; border-color: #0084B4",
+                         onclick = sprintf("window.open('%s')", 'https://twitter.com/mahkrika')
+                         ),
+            actionButton("github_share",
+                         label = "",
+                         icon = icon("github"),
+                         style="color: #fff; background-color: #967bb6; border-color: #0084B4",
+                         onclick = sprintf("window.open('%s')", 'https://github.com/mahkrika/Not-So-Shiny-Fit-ViewR')
+            )
         ),
 
         mainPanel(
@@ -119,6 +133,41 @@ ui <- fluidPage(
                                             style = "primary"
                             )
                         )
+                    ),
+                    
+                    tabPanel("About",
+                        h2(strong("About the dataset")),
+                        p("At present the output of the application provides a variety of basic information."),
+                        
+                        h3("Summary"),
+                        p("This tab provides details limited to those recorded from distance, duration, speed,
+                          and altitude."),
+                        p("Further information is likely recorded in the .fit file depending upon the device used.
+                          For example, Heart Rate information may be recorded but at present is not displayed in
+                          the app. This will be developed at a later point."),
+                        
+                        h3("Graphs"),
+                        p("A series of line graphs all with the timestamp on the x-axis. Each graph displays  
+                          elements on the y-axis (depending upon availability in the .fit file). These are currently 
+                          limited to altitude, temperature, cadence, and speed. Again Heart Rate will be developed 
+                          at a later date. Any further suggestions are welcomed."),
+                        
+                        h3("Map"),
+                        p("A map of the route as loaded via the Leaflet package."),
+                        p("The map is centred based upon the median latitude and longitude coordinate from 
+                          those recorded in the .fit file. A zoom factor has been applied to the default 
+                          load, but the user can zoom in and out of the map as they wish."),
+                        p("The route taken is marked upon the map and is coloured: red > blue > black,
+                          where red is the start of the recorded route, and black is the end of the 
+                          recorded route."),
+                        
+                        h3("Individual row details of .fit"),
+                        p("This is a (collapsed as default) table of all of the recordings from the .fit file."),
+                        p("The output is taken directly from the ", strong(em("FITfileR")), "package using the "
+                          , em("records"), " command. This results in multiple tables which are then bound 
+                          together and ordered by the timestamp."),
+                        p("The timestamp is formatted to display correctly though may be susceptible to 
+                          daylight savings time issues. This may be rectified at a later date.")
                     )
                 )
             ),
