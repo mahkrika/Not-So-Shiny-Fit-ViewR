@@ -26,51 +26,51 @@ ui <- fluidPage(
         mainPanel(
             conditionalPanel(
                 "output.fileUploaded == true",
-                h2("File uploaded"),
-                h3("Summary of .fit:"),
-                h4("Total distance:"),
-                h4(textOutput("summaryDistance")),
-                h4("Total Duration (seconds):"),
-                h4(textOutput("summaryDuration")), # Trying to use hms to shows as hhmmss!
-                h4("Average Speed:"),
-                h4(textOutput("summaryAvgSpeed")),
-                h4("Maximum Altitude:"),
-                h4(textOutput("summaryMaxAlt")),
-                h4("Minimum Altitude:"),
-                h4(textOutput("summaryMinAlt")),
-                h4("Overall Altitude change:"),
-                h4(textOutput("summaryAltChange")),
+                h1(em("File uploaded")),
+                h2(strong("Summary of .fit:")),
+                h3(strong("Total distance:")),
+                h3(textOutput("summaryDistance")),
+                h3(strong("Total Duration (hh:mm:ss):")),
+                h3(textOutput("summaryDurationHMS")),
+                h3(strong("Average Speed:")),
+                h3(textOutput("summaryAvgSpeed")),
+                h3(strong("Maximum Altitude:")),
+                h3(textOutput("summaryMaxAlt")),
+                h3(strong("Minimum Altitude:")),
+                h3(textOutput("summaryMinAlt")),
+                h3(strong("Overall Altitude change:")),
+                h3(textOutput("summaryAltChange")),
                 
-                h3("Graphs of .fit"),
+                h2(strong("Graphs of .fit")),
                 
                 conditionalPanel(
                     "output.altValid == true",
-                h4("Altitude by timestamp"),
+                h3(strong("Altitude by timestamp")),
                 plotOutput("graphAlt")
                 ),
                 
                 conditionalPanel(
                     "output.tempValid == true",
-                h4("Temperature by timestamp"),
+                h3(strong("Temperature by timestamp")),
                 plotOutput("graphTemp")
                 ),
                 
                 conditionalPanel(
                     "output.cadValid == true",
-                h4("Cadence by timestamp"),
+                h3(strong("Cadence by timestamp")),
                 plotOutput("graphCad")
                 ),
                 
                 conditionalPanel(
                     "output.speedValid == true",
-                h4("Speed by timestamp"),
+                h3(strong("Speed by timestamp")),
                 plotOutput("graphSpeed")
                 ),
 
-                h3("Map of route"),
+                h2(strong("Map of route")),
                 leafletOutput(outputId = "mymap"),
                 
-                h3("Individual row details of .fit"),
+                h2(strong("Individual row details of .fit")),
                 
                 # Lovely little package for collapsible panel
                 bsCollapse(
@@ -103,11 +103,6 @@ server <- function(input, output) {
         
         bind_rows(records(readFitFile(inFile$datapath, dropUnknown = TRUE, mergeMessages = TRUE)))
     })
-    
-   # rawDataDTTM <- reactive({
-   #     rawDataDTTM <- rawData() %>% 
-   #         mutate(timestampDTTM = format(timestamp, '%d-%m-%Y %H:%M:%S'))
-   # })
     
     #####################################################################################################      
     # Section to determine if a file has been loaded - for conditional display on main body.
@@ -197,27 +192,39 @@ server <- function(input, output) {
 ##################################################################################################### 
  # Datasets for individual graphs - requires individual in case NA in only one field?  
     allSpeeds <- reactive({
+        if("speed" %in% colnames(rawData())){
         allSpeeds <- rawData() %>% 
             filter(!is.na(speed)) %>% 
             select(timestamp, speed)
+        }
+        else {return(NULL)}
     })
 
     allTemps <- reactive({
-        allTemps <- rawData() %>% 
-            filter(!is.na(temperature)) %>% 
-            select(timestamp, temperature)
+        if("temperature" %in% colnames(rawData())){
+            allTemps <- rawData() %>% 
+                filter(!is.na(temperature)) %>% 
+                select(timestamp, temperature)           
+        }
+        else {return(NULL)}
     })
     
     allCadence <- reactive({
+        if("cadence" %in% colnames(rawData())){
         allCadence <- rawData() %>% 
             filter(!is.na(cadence)) %>% 
             select(timestamp, cadence)
+        }
+        else {return(NULL)}
     })
     
     allAltitude <- reactive({
+        if("altitude" %in% colnames(rawData())){
         allAltitude <- rawData() %>% 
             filter(!is.na(altitude)) %>% 
             select(timestamp, altitude)
+        }
+        else {return(NULL)}
     })
     
     mapdf <- reactive({
@@ -278,7 +285,7 @@ server <- function(input, output) {
                                                 units = "secs")
                 )
             )
-        paste0(as.character(as_hms(summaryDurationHMS)))
+        paste0(hms(as.numeric(summaryDurationHMS$sDuration), NULL, NULL))
     })
 
     summaryAvgSpeed <- reactive({
