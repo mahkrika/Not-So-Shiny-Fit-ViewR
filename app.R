@@ -21,63 +21,104 @@ ui <- fluidPage(
             
             fileInput("file1", "Choose FIT File", accept = ".fit"),
             
+            h3(strong("About the No-So-Shiny Fit ViewR")),
+                p("This little Shiny app is evidently not very pretty, but it is a work in progress
+                  so will hopefully develop into something more aesthetically pleasing, and with more
+                  features."),
+                p("The tool came about because although I like the Suunto app for monitoring exercise
+                  I am also a glutton for punishment and like to learn new data skills - in this instance
+                  R. Therefore this is an attempt to port some of the Suunto (and any other exercise
+                  monitoring watch/device) app functionality into an online tool."),
+                p("It runs using the following packages"),
+                HTML("<ul>
+                                <li><a href='https://cran.r-project.org/web/packages/shiny/'>shiny</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/shinythemes/'>shinythemes</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/shinyBS/'>shinyBS</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/dplyr/'>dplyr</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/ggplot2/'>ggplot2</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/leaflet/'>leaflet</a></li>
+                                <li><a href='https://cran.r-project.org/web/packages/hms/index.html'>hms</a></li>
+                                <li><a href='https://github.com/grimbough/FITfileR'>FITfileR</a></li>
+                             </ul>"
+                ),
+            
+            p("I want to bring particular attention to ", strong(em("FITfileR")), " which is a
+              lovely package available from the link in the list. I could not for the life of me
+              work out how to convert a .fit file into something usable in R. This package does all
+              of the conversion of the .fit file into a dataframe within R which is then used for all
+              subsequent operations. If you ever see this message, ", em("thank you for developing 
+              this package!")),
+            
+            p("All of the code that underpins this Shiny app is available from Github below.")
+            
         ),
 
         mainPanel(
             conditionalPanel(
                 "output.fileUploaded == true",
-                h1(em("File uploaded")),
-                h2(strong("Summary of .fit:")),
-                h3(strong("Total distance:")),
-                h3(textOutput("summaryDistance")),
-                h3(strong("Total Duration (hh:mm:ss):")),
-                h3(textOutput("summaryDurationHMS")),
-                h3(strong("Average Speed:")),
-                h3(textOutput("summaryAvgSpeed")),
-                h3(strong("Maximum Altitude:")),
-                h3(textOutput("summaryMaxAlt")),
-                h3(strong("Minimum Altitude:")),
-                h3(textOutput("summaryMinAlt")),
-                h3(strong("Overall Altitude change:")),
-                h3(textOutput("summaryAltChange")),
+                tabsetPanel(type = "tabs",
+                            
+                    tabPanel("Summary",
+                        h1(em("File uploaded")),
+                        h2(strong("Summary of .fit:")),
+                        h3(strong("Total distance:")),
+                        h3(textOutput("summaryDistance")),
+                        h3(strong("Total Duration (hh:mm:ss):")),
+                        h3(textOutput("summaryDurationHMS")),
+                        h3(strong("Average Speed:")),
+                        h3(textOutput("summaryAvgSpeed")),
+                        h3(strong("Maximum Altitude:")),
+                        h3(textOutput("summaryMaxAlt")),
+                        h3(strong("Minimum Altitude:")),
+                        h3(textOutput("summaryMinAlt")),
+                        h3(strong("Overall Altitude change:")),
+                        h3(textOutput("summaryAltChange"))
+                    ),
                 
-                h2(strong("Graphs of .fit")),
+                    tabPanel("Graphs",
+                        h2(strong("Graphs of .fit")),
                 
-                conditionalPanel(
-                    "output.altValid == true",
-                h3(strong("Altitude by timestamp")),
-                plotOutput("graphAlt")
-                ),
+                        conditionalPanel(
+                            "output.altValid == true",
+                        h3(strong("Altitude by timestamp")),
+                        plotOutput("graphAlt")
+                        ),
+                        
+                        conditionalPanel(
+                            "output.tempValid == true",
+                        h3(strong("Temperature by timestamp")),
+                        plotOutput("graphTemp")
+                        ),
+                        
+                        conditionalPanel(
+                            "output.cadValid == true",
+                        h3(strong("Cadence by timestamp")),
+                        plotOutput("graphCad")
+                        ),
+                        
+                        conditionalPanel(
+                            "output.speedValid == true",
+                        h3(strong("Speed by timestamp")),
+                        plotOutput("graphSpeed")
+                        )
+                    ),
+                    
+                    tabPanel("Map",
+                        h2(strong("Map of route")),
+                        leafletOutput(outputId = "mymap")
+                    ),
                 
-                conditionalPanel(
-                    "output.tempValid == true",
-                h3(strong("Temperature by timestamp")),
-                plotOutput("graphTemp")
-                ),
+                    tabPanel("Row level",
+                        h2(strong("Individual row details of .fit")),
                 
-                conditionalPanel(
-                    "output.cadValid == true",
-                h3(strong("Cadence by timestamp")),
-                plotOutput("graphCad")
-                ),
-                
-                conditionalPanel(
-                    "output.speedValid == true",
-                h3(strong("Speed by timestamp")),
-                plotOutput("graphSpeed")
-                ),
-
-                h2(strong("Map of route")),
-                leafletOutput(outputId = "mymap"),
-                
-                h2(strong("Individual row details of .fit")),
-                
-                # Lovely little package for collapsible panel
-                bsCollapse(
-                    bsCollapsePanel("Click here to expand full .fit table", "This is the full output of the fit ",
-                                    "file and combines all data into one structure:",
-                                    tableOutput("fullFitData"),
-                                    style = "primary"
+                        # Lovely little package for collapsible panel
+                        bsCollapse(
+                            bsCollapsePanel("Click here to expand full .fit table", "This is the full output of the fit ",
+                                            "file and combines all data into one structure:",
+                                            tableOutput("fullFitData"),
+                                            style = "primary"
+                            )
+                        )
                     )
                 )
             ),
@@ -148,7 +189,9 @@ server <- function(input, output) {
                           size = 0.5,
                           na.rm = FALSE)
             p
-        })
+        }, 
+        width = "auto",
+        height = "auto")
     }
     
     #####################################################################################################     
